@@ -1,0 +1,442 @@
+openapi: 3.0.1
+info:
+  title: AI Agent For Academic Guidance
+  description: API for user authentication, course management, notes, and chatroom functionality
+  version: 1.0.0
+  contact:
+    name: Development Team
+    email: 21f2000526@ds.study.iitm.ac.in
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User registration, login, and authentication operations
+  - name: Courses
+    description: Course management and enrollment operations
+  - name: Notes
+    description: User notes creation, retrieval, and management
+  - name: Chatroom
+    description: Course chatroom and messaging functionality
+
+paths:
+  /signup/:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new user account
+      description: Registers a new student user with email, username, password, and course selections
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - username
+                - password
+                - role
+                - courses
+              properties:
+                email:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: ['student']
+                courses:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: User created successfully
+        '400':
+          description: Invalid input or missing required fields
+        '403':
+          description: Unauthorized role
+
+  /login/:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user credentials and create a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /logout/:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Terminate the current user session
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          description: User not authenticated
+
+  /user:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user details
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User details retrieved successfully
+
+  /courses:
+    get:
+      tags:
+        - Courses
+      summary: Get user's enrolled courses
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of user's courses
+
+  /all-courses:
+    get:
+      tags:
+        - Courses
+      summary: Get all available courses
+      responses:
+        '200':
+          description: List of all courses
+
+  /courses/add:
+    post:
+      tags:
+        - Courses
+      summary: Add new courses to user's enrollment
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - course_names
+              properties:
+                course_names:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Courses added successfully
+        '400':
+          description: Invalid course names
+
+  /courses/drop:
+    post:
+      tags:
+        - Courses
+      summary: Drop courses from user's enrollment
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - course_names
+              properties:
+                course_names:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Courses dropped successfully
+        '400':
+          description: Invalid course names
+
+  /notes:
+    post:
+      tags:
+        - Notes
+      summary: Create a new note
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - courseId
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                courseId:
+                  type: integer
+      responses:
+        '201':
+          description: Note created successfully
+        '400':
+          description: Missing required fields
+        '404':
+          description: Course not found
+
+    get:
+      tags:
+        - Notes
+      summary: Get user's notes (optionally filtered by course)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: courseId
+          schema:
+            type: integer
+          required: false
+          description: Filter notes by course ID
+      responses:
+        '200':
+          description: Notes retrieved successfully
+
+  /notes/{noteId}:
+    get:
+      tags:
+        - Notes
+      summary: Get specific note details
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Note details retrieved
+        '404':
+          description: Note not found
+
+    put:
+      tags:
+        - Notes
+      summary: Update an existing note
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                courseId:
+                  type: integer
+      responses:
+        '200':
+          description: Note updated successfully
+        '404':
+          description: Note not found
+
+    delete:
+      tags:
+        - Notes
+      summary: Delete a note
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Note deleted successfully
+        '404':
+          description: Note not found
+
+  /chatrooms:
+    get:
+      tags:
+        - Chatroom
+      summary: Get user's chatrooms
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Chatrooms retrieved successfully
+
+  /chatrooms/{courseId}:
+    get:
+      tags:
+        - Chatroom
+      summary: Get chatroom for a specific course
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Chatroom details retrieved
+        '404':
+          description: Course not found
+
+  /messages/{chatroomId}:
+    get:
+      tags:
+        - Chatroom
+      summary: Get messages for a specific chatroom
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: chatroomId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Messages retrieved successfully
+        '404':
+          description: Chatroom not found
+
+  /messages:
+    post:
+      tags:
+        - Chatroom
+      summary: Send a new message
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - courseId
+                - message
+              properties:
+                courseId:
+                  type: integer
+                message:
+                  type: string
+      responses:
+        '201':
+          description: Message sent successfully
+        '400':
+          description: Invalid input
+        '404':
+          description: Course not found
+
+  /messages/{messageId}:
+    put:
+      tags:
+        - Chatroom
+      summary: Edit an existing message
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: messageId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Message updated successfully
+        '403':
+          description: Not authorized to edit message
+        '404':
+          description: Message not found
+
+    delete:
+      tags:
+        - Chatroom
+      summary: Delete a message
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: messageId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Message deleted successfully
+        '403':
+          description: Not authorized to delete message
+        '404':
+          description: Message not found
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      
+security:
+   - cookieAuth: []
